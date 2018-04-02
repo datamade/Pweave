@@ -128,6 +128,7 @@ class Pweb(object):
                         )
         proc.run()
         self.executed = proc.getresults()
+        self.with_error = proc.with_error
 
     def setformat(self, doctype = None, Formatter = None):
         """
@@ -192,6 +193,8 @@ class Pweb(object):
         self.run()
         self.format()
         self.write()
+        if self.with_error:
+            sys.exit(1)
 
     def tangle(self):
         """Tangle the document"""

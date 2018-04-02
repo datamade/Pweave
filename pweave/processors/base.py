@@ -22,6 +22,7 @@ class PwebProcessorBase(object):
         self.figdir = figdir
         self.outdir = outdir
         self.executed = []
+        self.with_error = False
 
         self.cwd = os.path.dirname(os.path.abspath(source))
         self.basename = os.path.basename(os.path.abspath(source)).split(".")[0]
@@ -162,6 +163,9 @@ class PwebProcessorBase(object):
                         content = ""
                         new_chunk["result"] = results[i]
                         chunks.append(new_chunk)
+                        if results[i]['output_type'] == 'error':
+                            self.with_error = True
+
 
                 #Deal with not output, #73
                 if len(content) > 0:
@@ -173,6 +177,8 @@ class PwebProcessorBase(object):
                 return(chunks)
             else:
                 chunk['result'] = self.loadstring(chunk['content'], chunk=chunk)
+                if chunk['result'][0]['output_type'] == 'error':
+                    self.with_error = True
 
         #After executing the code save the figure
         if chunk['fig']:
