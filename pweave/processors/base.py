@@ -173,8 +173,9 @@ class PwebProcessorBase(object):
                 return(chunks)
             else:
                 chunk['result'] = self.loadstring(chunk['content'], chunk=chunk)
-                if chunk['result'][0]['output_type'] == 'error':
-                    self.with_error = True
+
+            if chunk['result'] and chunk['result'][0]['output_type'] == 'error':
+                self.with_error = True
 
         #After executing the code save the figure
         if chunk['fig']:
