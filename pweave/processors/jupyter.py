@@ -64,6 +64,8 @@ class JupyterProcessor(PwebProcessorBase):
                 if timeout < 0:
                     timeout = None
                 msg = self.kc.get_shell_msg(timeout=timeout)
+                import pdb
+                pdb.set_trace()
             except Empty:
                 if self.interrupt_on_timeout:
                     self.km.interrupt_kernel()

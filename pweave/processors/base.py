@@ -33,25 +33,24 @@ class PwebProcessorBase(object):
         self.ensureDirectoryExists(self.getFigDirectory())
         # Documentation mode uses results from previous  executions
         # so that compilation is fast if you only work on doc chunks
-        if self.documentationmode:
-            success = self._getoldresults()
-            if success:
-                logger.warn("Restoring cached results")
-                return
-            else:
-                logger.info(
-                    "DOCUMENTATION MODE ERROR:\nCan't find stored results, running the code and caching results for the next documentation mode run\n")
-                rcParams["storeresults"] = True
+
+        # default to True
+        rcParams["storeresults"] = True
+        cached_chunks = self._getoldresults()
 
         self.executed = []
 
         # Term chunk returns a list of dicts, this flattens the results
         for chunk in self.parsed:
-            res = self._runcode(chunk)
-            if isinstance(res, list):
-                self.executed = self.executed + res
+            key = (chunk['content'], chunk['options']['option_string'])
+            if chunk[key] in cached_chunks:
+                self.executed.append(cached_chunks[key])
             else:
-                self.executed.append(res)
+                res = self._runcode(chunk)
+                if isinstance(res, list):
+                    self.executed = self.executed + res
+                else:
+                    self.executed.append(res)
 
 
         self.isexecuted = True
@@ -218,16 +217,14 @@ class PwebProcessorBase(object):
 
         n = len(self.parsed)
 
-        for i in range(n):
-            chunk = self.parsed[i]
-            if chunk['type'] != "code":
-                executed.append(self._hideinline(chunk.copy()))
-            else:
-                chunks = [c for c in self._oldresults if c["number"] == i and c["type"] == "code"]
-                executed = executed + chunks
+        cached_chunks = {}
+        for chunk in self._oldresults:
+            if chunk["type"] == "code":
+                # maybe also options as key
+                key = (chunk['content'], chunk['options']['option_string'])
+                cached_chunks[key] = chunk
 
-        self.executed = executed
-        return True
+        return cached_chunks
 
     def load_shell(self, chunk):
         pass
