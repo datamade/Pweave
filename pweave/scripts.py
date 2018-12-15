@@ -4,14 +4,6 @@ import pweave
 import logging
 
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
-logging.getLogger("ipykernel").propagate = False
-
-logger_handler = logging.StreamHandler()
-logger.addHandler(logger_handler)
-
-
 def weave():
     if len(sys.argv) == 1:
         print("This is pweave %s, enter Pweave -h for help" % pweave.__version__)
@@ -127,13 +119,8 @@ def weave():
     if options.figformat is not None:
         opts_dict["figformat"] = ".%s" % options.figformat
 
-    if opts_dict.pop("verbosity"):
-        logging.getLogger("ipykernel").propagate = True
-        ipykernel_handler = logging.StreamHandler()
-        logging.getLogger("ipykernel").addHandler(ipykernel_handler)
-        ipykernel_handler.setFormatter(
-            logging.Formatter("%(levelname)s:%(name)s:%(message)s")
-        )
+    verbose = opts_dict.pop("verbosity")
+    _setup_logging(verbose)
 
     pweave.weave(infile, **opts_dict)
 
@@ -265,3 +252,27 @@ def convert():
         pandoc_args=options.pandoc_args,
         listformats=options.listformats,
     )
+
+
+def _setup_logging(verbose):
+    class Filter(logging.Filter):
+        def filter(self, record):
+            return "Exception in execute request" in record.msg
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
+    logger_handler = logging.StreamHandler()
+    logger.addHandler(logger_handler)
+
+    ipykernel_logger = logging.getLogger("ipykernel.inprocess.ipkernel")
+    ipykernel_logger.propagate = False
+    ipykernel_logger.addFilter(Filter())
+
+    if verbose:
+        ipykernel_handler = logging.StreamHandler()
+        ipykernel_handler.setFormatter(
+            logging.Formatter("%(levelname)s:%(name)s:%(message)s")
+        )
+
+        ipykernel_logger.addHandler(ipykernel_handler)
